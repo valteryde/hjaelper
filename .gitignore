@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+*.sqlite3
+.venv/
+media/
+*.egg-info/
+dist/
+build/
+.env
+.dockerignore

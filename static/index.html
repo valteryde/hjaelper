@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Automated AI PDF proofreader — upload a PDF and get annotated feedback.">
+    <title>Hjælper — AI PDF Proofreader</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Space+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <div class="swiss-grid">
+        <!-- Left Header Area -->
+        <header class="header-zone">
+            <div class="top-meta">
+                <span class="mono"></span>
+                <span class="mono">2026</span>
+            </div>
+
+            <div class="title-wrap">
+                <h1>HJÆLPER</h1>
+                <h2>AI PDF PROOFREADER</h2>
+            </div>
+        </header>
+
+        <!-- Right Content Area -->
+        <main class="content-zone">
+            <div class="content-inner">
+
+                <!-- Upload Section -->
+                <section id="upload-section">
+                    <div class="section-header">
+                        <span class="step-num">01</span>
+                        <h3>INITIALIZE</h3>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="field full-width">
+                            <label for="pdf-file">Source Document</label>
+                            <div class="file-wrap">
+                                <input type="file" id="pdf-file" accept=".pdf">
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label for="provider">LLM Provider</label>
+                            <select id="provider">
+                                <option value="openai">OpenAI</option>
+                                <option value="anthropic">Anthropic</option>
+                                <option value="openrouter">OpenRouter</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label for="model">Model ID</label>
+                            <input type="text" id="model" placeholder="gpt-4o">
+                        </div>
+
+                        <div class="field">
+                            <label for="chunk-size">Words Per Chunk</label>
+                            <input type="number" id="chunk-size" value="2000" min="200" max="50000" step="100">
+                        </div>
+
+                        <div class="field">
+                            <label for="language">Language</label>
+                            <select id="language">
+                                <option value="english_us">🇺🇸 American English</option>
+                                <option value="english_uk">🇬🇧 British English</option>
+                                <option value="danish">🇩🇰 Danish</option>
+                                <option value="afrikaans">🇿🇦 Afrikaans</option>
+                                <option value="albanian">🇦🇱 Albanian</option>
+                                <option value="amharic">🇪🇹 Amharic</option>
+                                <option value="arabic">🇸🇦 Arabic</option>
+                                <option value="armenian">🇦🇲 Armenian</option>
+                                <option value="azerbaijani">🇦🇿 Azerbaijani</option>
+                                <option value="basque">🇪🇸 Basque</option>
+                                <option value="belarusian">🇧🇾 Belarusian</option>
+                                <option value="bengali">🇧🇩 Bengali</option>
+                                <option value="bosnian">🇧🇦 Bosnian</option>
+                                <option value="bulgarian">🇧🇬 Bulgarian</option>
+                                <option value="catalan">🇪🇸 Catalan</option>
+                                <option value="cebuano">🇵🇭 Cebuano</option>
+                                <option value="chichewa">🇲🇼 Chichewa</option>
+                                <option value="chinese_simplified">🇨🇳 Chinese (Simplified)</option>
+                                <option value="chinese_traditional">🇹🇼 Chinese (Traditional)</option>
+                                <option value="corsican">🇫🇷 Corsican</option>
+                                <option value="croatian">🇭🇷 Croatian</option>
+                                <option value="czech">🇨🇿 Czech</option>
+                                <option value="dutch">🇳🇱 Dutch</option>
+                                <option value="esperanto">🌍 Esperanto</option>
+                                <option value="estonian">🇪🇪 Estonian</option>
+                                <option value="filipino">🇵🇭 Filipino</option>
+                                <option value="finnish">🇫🇮 Finnish</option>
+                                <option value="french">🇫🇷 French</option>
+                                <option value="frisian">🇳🇱 Frisian</option>
+                                <option value="galician">🇪🇸 Galician</option>
+                                <option value="georgian">🇬🇪 Georgian</option>
+                                <option value="german">🇩🇪 German</option>
+                                <option value="greek">🇬🇷 Greek</option>
+                                <option value="gujarati">🇮🇳 Gujarati</option>
+                                <option value="haitian_creole">🇭🇹 Haitian Creole</option>
+                                <option value="hausa">🇳🇬 Hausa</option>
+                                <option value="hawaiian">🇺🇸 Hawaiian</option>
+                                <option value="hebrew">🇮🇱 Hebrew</option>
+                                <option value="hindi">🇮🇳 Hindi</option>
+                                <option value="hmong">🇨🇳 Hmong</option>
+                                <option value="hungarian">🇭🇺 Hungarian</option>
+                                <option value="icelandic">🇮🇸 Icelandic</option>
+                                <option value="igbo">🇳🇬 Igbo</option>
+                                <option value="indonesian">🇮🇩 Indonesian</option>
+                                <option value="irish">🇮🇪 Irish</option>
+                                <option value="italian">🇮🇹 Italian</option>
+                                <option value="japanese">🇯🇵 Japanese</option>
+                                <option value="javanese">🇮🇩 Javanese</option>
+                                <option value="kannada">🇮🇳 Kannada</option>
+                                <option value="kazakh">🇰🇿 Kazakh</option>
+                                <option value="khmer">🇰🇭 Khmer</option>
+                                <option value="kinyarwanda">🇷🇼 Kinyarwanda</option>
+                                <option value="korean">🇰🇷 Korean</option>
+                                <option value="kurdish">🇮🇶 Kurdish (Kurmanji)</option>
+                                <option value="kyrgyz">🇰🇬 Kyrgyz</option>
+                                <option value="lao">🇱🇦 Lao</option>
+                                <option value="latin">🏛️ Latin</option>
+                                <option value="latvian">🇱🇻 Latvian</option>
+                                <option value="lithuanian">🇱🇹 Lithuanian</option>
+                                <option value="luxembourgish">🇱🇺 Luxembourgish</option>
+                                <option value="macedonian">🇲🇰 Macedonian</option>
+                                <option value="malagasy">🇲🇬 Malagasy</option>
+                                <option value="malay">🇲🇾 Malay</option>
+                                <option value="malayalam">🇮🇳 Malayalam</option>
+                                <option value="maltese">🇲🇹 Maltese</option>
+                                <option value="maori">🇳🇿 Maori</option>
+                                <option value="marathi">🇮🇳 Marathi</option>
+                                <option value="mongolian">🇲🇳 Mongolian</option>
+                                <option value="myanmar">🇲🇲 Myanmar (Burmese)</option>
+                                <option value="nepali">🇳🇵 Nepali</option>
+                                <option value="norwegian">🇳🇴 Norwegian</option>
+                                <option value="odia">🇮🇳 Odia (Oriya)</option>
+                                <option value="pashto">🇦🇫 Pashto</option>
+                                <option value="persian">🇮🇷 Persian</option>
+                                <option value="polish">🇵🇱 Polish</option>
+                                <option value="portuguese">🇵🇹 Portuguese</option>
+                                <option value="punjabi">🇮🇳 Punjabi</option>
+                                <option value="romanian">🇷🇴 Romanian</option>
+                                <option value="russian">🇷🇺 Russian</option>
+                                <option value="samoan">🇼🇸 Samoan</option>
+                                <option value="scots_gaelic">🏴󠁧󠁢󠁳󠁣󠁴󠁿 Scots Gaelic</option>
+                                <option value="serbian">🇷🇸 Serbian</option>
+                                <option value="sesotho">🇱🇸 Sesotho</option>
+                                <option value="shona">🇿🇼 Shona</option>
+                                <option value="sindhi">🇵🇰 Sindhi</option>
+                                <option value="sinhala">🇱🇰 Sinhala</option>
+                                <option value="slovak">🇸🇰 Slovak</option>
+                                <option value="slovenian">🇸🇮 Slovenian</option>
+                                <option value="somali">🇸🇴 Somali</option>
+                                <option value="spanish">🇪🇸 Spanish</option>
+                                <option value="sundanese">🇮🇩 Sundanese</option>
+                                <option value="swahili">🇰🇪 Swahili</option>
+                                <option value="swedish">🇸🇪 Swedish</option>
+                                <option value="tajik">🇹🇯 Tajik</option>
+                                <option value="tamil">🇮🇳 Tamil</option>
+                                <option value="tatar">🇷🇺 Tatar</option>
+                                <option value="telugu">🇮🇳 Telugu</option>
+                                <option value="thai">🇹🇭 Thai</option>
+                                <option value="turkish">🇹🇷 Turkish</option>
+                                <option value="turkmen">🇹🇲 Turkmen</option>
+                                <option value="ukrainian">🇺🇦 Ukrainian</option>
+                                <option value="urdu">🇵🇰 Urdu</option>
+                                <option value="uyghur">🇨🇳 Uyghur</option>
+                                <option value="uzbek">🇺🇿 Uzbek</option>
+                                <option value="vietnamese">🇻🇳 Vietnamese</option>
+                                <option value="welsh">🏴󠁧󠁢󠁷󠁬󠁳󠁿 Welsh</option>
+                                <option value="xhosa">🇿🇦 Xhosa</option>
+                                <option value="yiddish">✡️ Yiddish</option>
+                                <option value="yoruba">🇳🇬 Yoruba</option>
+                                <option value="zulu">🇿🇦 Zulu</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label for="skill-level">Skill Level</label>
+                            <input type="text" id="skill-level" placeholder="e.g. Middle School, Academic">
+                        </div>
+
+                        <div class="field full-width">
+                            <label for="custom-prompt">Custom Instructions</label>
+                            <textarea id="custom-prompt" placeholder="Extra instructions for the AI..."></textarea>
+                        </div>
+
+                        <div class="field full-width">
+                            <label for="api-key">Authentication Key</label>
+                            <input type="password" id="api-key" placeholder="sk-...">
+                            <small>Stored locally. Never persisted.</small>
+                        </div>
+                    </div>
+
+                    <button id="submit-btn" type="button">UPLOAD & PROOFREAD</button>
+                </section>
+
+                <!-- Progress Section -->
+                <section id="progress-section" hidden>
+                    <div class="section-header">
+                        <span class="step-num">02</span>
+                        <h3>PROCESSING</h3>
+                    </div>
+                    <div class="progress-container">
+                        <p id="status-text" class="status-heading">Starting...</p>
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill"></div>
+                        </div>
+                        <p id="progress-detail" class="mono"></p>
+                    </div>
+                </section>
+
+                <!-- Download Section -->
+                <section id="download-section" hidden>
+                    <div class="section-header">
+                        <span class="step-num">03</span>
+                        <h3>COMPLETE</h3>
+                    </div>
+                    <div class="download-container">
+                        <p class="success-msg">Proofreading cycle finalized.</p>
+                        <a id="download-link" href="#" download>DOWNLOAD ANNOTATED PDF</a>
+                    </div>
+                </section>
+
+                <!-- Error Section -->
+                <section id="error-section" hidden>
+                    <div class="error-container">
+                        <h4>SYSTEM ERROR</h4>
+                        <p id="error-text"></p>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+
+</html>
