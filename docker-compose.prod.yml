@@ -1,0 +1,32 @@
+services:
+  redis:
+    image: redis:7-alpine
+    restart: always
+
+  web:
+    image: ghcr.io/valteryde/hjaelper:main
+    restart: always
+    ports:
+      - "${PORT:-8000}:8000"
+    volumes:
+      - media:/app/media
+    depends_on:
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+
+  worker:
+    image: ghcr.io/valteryde/hjaelper:main
+    restart: always
+    command: celery -A hjaelper worker -l info
+    volumes:
+      - media:/app/media
+    depends_on:
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+
+volumes:
+  media:
