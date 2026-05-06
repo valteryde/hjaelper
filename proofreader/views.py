@@ -25,6 +25,7 @@ def upload_pdf(request):
     enable_thread = request.POST.get("enable_thread", "").lower() in ("true", "1", "on")
     enable_coherence = request.POST.get("enable_coherence", "").lower() in ("true", "1", "on")
     enable_factcheck = request.POST.get("enable_factcheck", "").lower() in ("true", "1", "on")
+    enable_grading = request.POST.get("enable_grading", "").lower() in ("true", "1", "on")
 
     # Parse chunk size (words per chunk). Default 2000, min 200, max 50000.
     try:
@@ -56,7 +57,7 @@ def upload_pdf(request):
     process_pdf.delay(
         str(job.id), api_key, model, provider, chunk_size,
         language, harshness, skill_level, custom_prompt,
-        enable_thread, enable_coherence, enable_factcheck,
+        enable_thread, enable_coherence, enable_factcheck, enable_grading,
     )
 
     return JsonResponse({"job_id": str(job.id)})

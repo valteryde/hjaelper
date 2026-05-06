@@ -17,6 +17,9 @@
     const enableThreadInput = document.getElementById("enable-thread");
     const enableCoherenceInput = document.getElementById("enable-coherence");
     const enableFactcheckInput = document.getElementById("enable-factcheck");
+    const enableGradingInput = document.getElementById("enable-grading");
+
+    const shareBtn = document.getElementById("share-btn");
 
     const uploadSection = document.getElementById("upload-section");
     const progressSection = document.getElementById("progress-section");
@@ -30,40 +33,91 @@
     const errorSection = document.getElementById("error-section");
     const errorText = document.getElementById("error-text");
 
-    // Restore saved values from localStorage
-    const savedKey = localStorage.getItem("hjaelper_api_key");
+    // Parse URL hash for settings
+    const hash = window.location.hash.slice(1);
+    let urlSettings = null;
+    if (hash) {
+        try {
+            urlSettings = JSON.parse(atob(hash));
+            // Clear hash so it doesn't linger
+            history.replaceState(null, '', window.location.pathname);
+        } catch (e) {
+            console.error("Failed to parse settings from URL hash");
+        }
+    }
+
+    // Restore saved values from localStorage or URL hash
+    const savedKey = urlSettings?.api_key ?? localStorage.getItem("hjaelper_api_key");
     if (savedKey) apiKeyInput.value = savedKey;
 
-    const savedProvider = localStorage.getItem("hjaelper_provider");
+    const savedProvider = urlSettings?.provider ?? localStorage.getItem("hjaelper_provider");
     if (savedProvider) providerSelect.value = savedProvider;
 
-    const savedModel = localStorage.getItem("hjaelper_model");
+    const savedModel = urlSettings?.model ?? localStorage.getItem("hjaelper_model");
     if (savedModel) modelInput.value = savedModel;
 
-    const savedChunkSize = localStorage.getItem("hjaelper_chunk_size");
+    const savedChunkSize = urlSettings?.chunk_size ?? localStorage.getItem("hjaelper_chunk_size");
     if (savedChunkSize) chunkSizeInput.value = savedChunkSize;
 
-    const savedLanguage = localStorage.getItem("hjaelper_language");
+    const savedLanguage = urlSettings?.language ?? localStorage.getItem("hjaelper_language");
     if (savedLanguage) languageInput.value = savedLanguage;
 
-    const savedHarshness = localStorage.getItem("hjaelper_harshness");
+    const savedHarshness = urlSettings?.harshness ?? localStorage.getItem("hjaelper_harshness");
     if (savedHarshness) harshnessInput.value = savedHarshness;
 
-    const savedSkillLevel = localStorage.getItem("hjaelper_skill_level");
+    const savedSkillLevel = urlSettings?.skill_level ?? localStorage.getItem("hjaelper_skill_level");
     if (savedSkillLevel) skillLevelInput.value = savedSkillLevel;
 
-    const savedCustomPrompt = localStorage.getItem("hjaelper_custom_prompt");
+    const savedCustomPrompt = urlSettings?.custom_prompt ?? localStorage.getItem("hjaelper_custom_prompt");
     if (savedCustomPrompt) customPromptInput.value = savedCustomPrompt;
 
     // Restore toggle states
-    const savedThread = localStorage.getItem("hjaelper_enable_thread");
-    if (savedThread === "true") enableThreadInput.checked = true;
+    const savedThread = urlSettings?.enable_thread ?? localStorage.getItem("hjaelper_enable_thread");
+    if (savedThread === "true" || savedThread === true) enableThreadInput.checked = true;
 
-    const savedCoherence = localStorage.getItem("hjaelper_enable_coherence");
-    if (savedCoherence === "true") enableCoherenceInput.checked = true;
+    const savedCoherence = urlSettings?.enable_coherence ?? localStorage.getItem("hjaelper_enable_coherence");
+    if (savedCoherence === "true" || savedCoherence === true) enableCoherenceInput.checked = true;
 
-    const savedFactcheck = localStorage.getItem("hjaelper_enable_factcheck");
-    if (savedFactcheck === "true") enableFactcheckInput.checked = true;
+    const savedFactcheck = urlSettings?.enable_factcheck ?? localStorage.getItem("hjaelper_enable_factcheck");
+    if (savedFactcheck === "true" || savedFactcheck === true) enableFactcheckInput.checked = true;
+
+    const savedGrading = urlSettings?.enable_grading ?? localStorage.getItem("hjaelper_enable_grading");
+    if (savedGrading === "true" || savedGrading === true) enableGradingInput.checked = true;
+
+    // Share settings handler
+    shareBtn.addEventListener("click", () => {
+        const settings = {
+            api_key: apiKeyInput.value.trim(),
+            provider: providerSelect.value,
+            model: modelInput.value.trim(),
+            chunk_size: chunkSizeInput.value,
+            language: languageInput.value.trim(),
+            harshness: harshnessInput.value.trim(),
+            skill_level: skillLevelInput.value.trim(),
+            custom_prompt: customPromptInput.value.trim(),
+            enable_thread: enableThreadInput.checked,
+            enable_coherence: enableCoherenceInput.checked,
+            enable_factcheck: enableFactcheckInput.checked,
+            enable_grading: enableGradingInput.checked
+        };
+        
+        try {
+            const hash = btoa(JSON.stringify(settings));
+            const url = `${window.location.origin}${window.location.pathname}#${hash}`;
+            
+            navigator.clipboard.writeText(url).then(() => {
+                const originalText = shareBtn.textContent;
+                shareBtn.textContent = "COPIED TO CLIPBOARD!";
+                setTimeout(() => {
+                    shareBtn.textContent = originalText;
+                }, 2000);
+            }).catch(() => {
+                showError("Failed to copy URL to clipboard.");
+            });
+        } catch (e) {
+            showError("Failed to encode settings.");
+        }
+    });
 
     // Upload handler
     submitBtn.addEventListener("click", async () => {
@@ -79,6 +133,7 @@
         const enableThread = enableThreadInput.checked;
         const enableCoherence = enableCoherenceInput.checked;
         const enableFactcheck = enableFactcheckInput.checked;
+        const enableGrading = enableGradingInput.checked;
 
         if (!file) return showError("Please select a PDF file.");
         if (!apiKey) return showError("Please enter your API key.");
@@ -96,6 +151,7 @@
         localStorage.setItem("hjaelper_enable_thread", enableThread);
         localStorage.setItem("hjaelper_enable_coherence", enableCoherence);
         localStorage.setItem("hjaelper_enable_factcheck", enableFactcheck);
+        localStorage.setItem("hjaelper_enable_grading", enableGrading);
 
         // Build FormData
         const formData = new FormData();
@@ -111,6 +167,7 @@
         formData.append("enable_thread", enableThread);
         formData.append("enable_coherence", enableCoherence);
         formData.append("enable_factcheck", enableFactcheck);
+        formData.append("enable_grading", enableGrading);
 
         submitBtn.disabled = true;
         hideError();

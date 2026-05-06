@@ -15,6 +15,7 @@ from .prompts import (
     get_coherence_prompt,
     get_factcheck_prompt,
     get_thread_prompt,
+    get_grading_prompt,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ SEVERITY_COLORS = {
     "thread":     (0.6, 0.2, 0.8),   # purple
     "coherence":  (0.8, 0.4, 0.0),   # dark orange
     "factcheck":  (0.7, 0.0, 0.0),   # dark red
+    "grading":    (0.0, 0.8, 0.4),   # emerald green
 }
 
 # Provider → OpenAI-compatible base URL mapping.
@@ -261,6 +263,24 @@ def _annotate_thread_finding(doc, chunks, chunk_index, feedback):
     return True
 
 
+def _annotate_grading_finding(doc, grade, feedback):
+    """
+    Add a single comment in the top corner of the first page with some padding.
+    """
+    if not doc:
+        return
+    
+    page = doc[0]
+    color = SEVERITY_COLORS["grading"]
+    note_text = f"[GRADE: {grade}]\n{feedback}"
+    
+    # Put it in the top corner with padding, e.g. x=50, y=50
+    top_left = fitz.Point(50, 50)
+    note = page.add_text_annot(top_left, note_text)
+    note.set_colors(stroke=color)
+    note.update()
+    return True
+
 # ---------------------------------------------------------------------------
 # Celery tasks — chord pattern for parallel AI calls
 # ---------------------------------------------------------------------------
@@ -359,7 +379,7 @@ def factcheck_chunk(self, chunk_data, api_key, model, provider, job_id,
 
 
 @shared_task
-def annotate_and_save(results, job_id, enable_thread=False,
+def annotate_and_save(results, job_id, enable_thread=False, enable_grading=False,
                       api_key="", model="", provider="openai",
                       language="", harshness="", skill_level=""):
     """
@@ -422,6 +442,33 @@ def annotate_and_save(results, job_id, enable_thread=False,
             except Exception as exc:
                 logger.warning("Thread analysis failed for job %s: %s", job_id, exc)
 
+        # Document grading analysis
+        if enable_grading and summaries and api_key:
+            try:
+                grading_input = "\n\n".join(
+                    f"CHUNK {i + 1}:\n{s}" for i, s in enumerate(summaries)
+                )
+                client, call_fn = _make_client(provider, api_key)
+                system_prompt = get_grading_prompt(language, harshness, skill_level)
+                raw = call_fn(client, model, grading_input, system_prompt)
+                
+                # Grading prompt returns a JSON object, so parse it
+                try:
+                    raw_clean = raw.strip()
+                    raw_clean = re.sub(r"^```(?:json)?\s*", "", raw_clean)
+                    raw_clean = re.sub(r"\s*```$", "", raw_clean)
+                    grading_data = json.loads(raw_clean)
+                except json.JSONDecodeError:
+                    logger.warning("Grading returned non-JSON response: %s", raw[:200])
+                    grading_data = {}
+                
+                grade = grading_data.get("grade")
+                feedback = grading_data.get("feedback")
+                if grade and feedback:
+                    _annotate_grading_finding(doc, grade, feedback)
+            except Exception as exc:
+                logger.warning("Grading analysis failed for job %s: %s", job_id, exc)
+
         annotated_bytes = doc.tobytes()
         doc.close()
 
@@ -452,7 +499,7 @@ def process_pdf(job_id, api_key, model, provider="openai",
                 chunk_size=DEFAULT_CHUNK_WORD_LIMIT,
                 language="", harshness="", skill_level="", custom_prompt="",
                 enable_thread=False, enable_coherence=False,
-                enable_factcheck=False):
+                enable_factcheck=False, enable_grading=False):
     """
     Entry point: extract paragraph blocks, chunk them, then dispatch parallel AI calls
     via a Celery chord. The annotation callback runs once all chunks finish.
@@ -492,7 +539,7 @@ def process_pdf(job_id, api_key, model, provider="openai",
                 proofread_chunk.s(
                     chunk, api_key, model, provider, str(job_id),
                     language, harshness, skill_level, custom_prompt,
-                    include_summary=enable_thread,
+                    include_summary=(enable_thread or enable_grading),
                 )
             )
 
@@ -524,9 +571,10 @@ def process_pdf(job_id, api_key, model, provider="openai",
         callback = annotate_and_save.s(
             str(job_id),
             enable_thread=enable_thread,
-            api_key=api_key if enable_thread else "",
-            model=model if enable_thread else "",
-            provider=provider if enable_thread else "openai",
+            enable_grading=enable_grading,
+            api_key=api_key if (enable_thread or enable_grading) else "",
+            model=model if (enable_thread or enable_grading) else "",
+            provider=provider if (enable_thread or enable_grading) else "openai",
             language=language,
             harshness=harshness,
             skill_level=skill_level,

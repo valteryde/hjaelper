@@ -34,6 +34,7 @@ RULES:
 3. Focus on: grammar errors, spelling mistakes, unclear phrasing, inconsistent terminology, awkward sentence structure, and academic tone issues.
 4. If a passage is correct, do not mention it.
 5. Evaluate the text based on the following context:{language_instruction}{harshness_instruction}{skill_instruction}
+6. Keep your feedback and suggestions EXTREMELY short and concise. Do not write long paragraphs. Keep it to a single short sentence if possible.
 7. Respond in English.{summary_rule}
 
 SEVERITY LEVELS:
@@ -78,8 +79,9 @@ WHAT TO LOOK FOR:
 RULES:
 1. Focus ONLY on coherence and logical flow, not grammar or spelling.
 2. Quote the EXACT sentence(s) from the input where the coherence breaks down.
-3. If the section is coherent and makes sense, return an empty array.
-4. Respond in English.
+3. Keep your feedback and suggestions EXTREMELY short and concise. Do not write long paragraphs. Keep it to a single short sentence if possible.
+4. If the section is coherent and makes sense, return an empty array.
+5. Respond in English.
 
 OUTPUT FORMAT — respond with a JSON array and nothing else:
 [
@@ -117,8 +119,9 @@ RULES:
 2. Do NOT flag subjective opinions that are clearly presented as opinions.
 3. DO flag opinions that are too vague or presented as if they were established facts.
 4. Quote the EXACT sentence containing the claim.
-5. If all claims appear accurate, return an empty array.
-6. Respond in English.
+5. Keep your feedback and suggestions EXTREMELY short and concise. Do not write long paragraphs. Keep it to a single short sentence if possible.
+6. If all claims appear accurate, return an empty array.
+7. Respond in English.
 
 OUTPUT FORMAT — respond with a JSON array and nothing else:
 [
@@ -155,8 +158,9 @@ RULES:
 1. Focus on the DOCUMENT-LEVEL flow, not individual section quality.
 2. Reference sections by their chunk number (e.g. "Between chunk 3 and chunk 4...").
 3. For each issue, provide the chunk number where the problem occurs.
-4. If the document maintains a strong common thread, return an empty array.
-5. Respond in English.
+4. Keep your feedback and suggestions EXTREMELY short and concise. Do not write long paragraphs. Keep it to a single short sentence if possible.
+5. If the document maintains a strong common thread, return an empty array.
+6. Respond in English.
 
 OUTPUT FORMAT — respond with a JSON array and nothing else:
 [
@@ -169,4 +173,29 @@ OUTPUT FORMAT — respond with a JSON array and nothing else:
 ]
 
 If the document flows well, respond with: []
+"""
+
+
+def get_grading_prompt(language="", harshness="", skill_level=""):
+    language_instruction = f"\n- Target Language: {language}" if language else ""
+    harshness_desc = HARSHNESS_DESCRIPTIONS.get(harshness, HARSHNESS_DESCRIPTIONS["strict"])
+    harshness_instruction = f"\n- Tone/Harshness: {harshness_desc}" if harshness else ""
+    skill_instruction = f"\n- Target Audience/Skill Level: {skill_level}" if skill_level else ""
+
+    return f"""You are a document evaluator. You will receive a series of numbered summaries representing consecutive sections of a document. Your job is to evaluate the document as a whole, providing a final grade and a brief overall feedback on how well the document functions.
+
+CONTEXT:{language_instruction}{harshness_instruction}{skill_instruction}
+
+WHAT TO DO:
+1. Review all the provided summaries to understand the full scope and flow of the document.
+2. Provide a single overall letter grade (A+, A, A-, B+, B, B-, C+, C, C-, D, F) representing the quality of the document's structure, coherence, and content based on the summaries.
+3. Provide a brief 1-3 sentence feedback explaining the grade and noting how well the sections function together.
+4. Keep your feedback concise.
+5. Respond in English.
+
+OUTPUT FORMAT — respond with a JSON object and nothing else:
+{{
+  "grade": "A-",
+  "feedback": "Brief explanation of the grade and overall document quality."
+}}
 """

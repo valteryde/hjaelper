@@ -295,6 +295,24 @@ button:disabled {
     color: #666;
 }
 
+.button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: var(--c-text);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background-color: var(--c-bg);
+    border-color: var(--c-text);
+    box-shadow: 6px 6px 0 var(--c-text);
+    color: var(--c-text);
+}
+
 /* Progress */
 .progress-container {
     margin-top: 1rem;
