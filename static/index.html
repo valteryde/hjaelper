@@ -13,6 +13,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 
 <body>
@@ -39,6 +40,9 @@
                     <div class="section-header">
                         <span class="step-num">01</span>
                         <h3>INITIALIZE</h3>
+                        <button id="share-btn" class="icon-btn" title="Share Settings" type="button">
+                            <i class="ph ph-export"></i>
+                        </button>
                     </div>
 
                     <div class="form-grid">
@@ -238,10 +242,9 @@
                         </div>
                     </div>
 
-                    <div class="button-group">
-                        <button id="submit-btn" type="button">UPLOAD & PROOFREAD</button>
-                        <button id="share-btn" type="button" class="btn-secondary">COPY SETTINGS URL</button>
                     </div>
+
+                    <button id="submit-btn" type="button">UPLOAD & PROOFREAD</button>
                 </section>
 
                 <!-- Progress Section -->

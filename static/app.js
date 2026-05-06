@@ -106,10 +106,10 @@
             const url = `${window.location.origin}${window.location.pathname}#${hash}`;
             
             navigator.clipboard.writeText(url).then(() => {
-                const originalText = shareBtn.textContent;
-                shareBtn.textContent = "COPIED TO CLIPBOARD!";
+                const originalHTML = shareBtn.innerHTML;
+                shareBtn.innerHTML = '<i class="ph ph-check"></i>';
                 setTimeout(() => {
-                    shareBtn.textContent = originalText;
+                    shareBtn.innerHTML = originalHTML;
                 }, 2000);
             }).catch(() => {
                 showError("Failed to copy URL to clipboard.");
