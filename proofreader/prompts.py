@@ -64,12 +64,12 @@ def get_coherence_prompt(language="", harshness="", skill_level=""):
     harshness_instruction = f"\n- Tone/Harshness: {harshness_desc}" if harshness else ""
     skill_instruction = f"\n- Target Audience/Skill Level: {skill_level}" if skill_level else ""
 
-    return f"""You are a document coherence analyst. Your job is to evaluate whether a section of text makes logical sense AS A WHOLE — not just whether individual sentences are grammatically correct.
+    return f"""You are a document coherence analyst. You receive a series of numbered summaries representing consecutive sections of a document. Your job is to evaluate whether the document makes logical sense AS A WHOLE.
 
 CONTEXT:{language_instruction}{harshness_instruction}{skill_instruction}
 
 WHAT TO LOOK FOR:
-1. Paragraphs or sentences that contradict each other within the section.
+1. Sections that contradict each other.
 2. Non-sequiturs — statements that don't follow logically from what came before.
 3. Abrupt topic changes without transition or justification.
 4. Missing logical connectors — ideas that are presented without explaining how they relate.
@@ -77,23 +77,24 @@ WHAT TO LOOK FOR:
 6. Sections where the ordering of ideas is confusing or counterproductive.
 
 RULES:
-1. Focus ONLY on coherence and logical flow, not grammar or spelling.
-2. Quote the EXACT sentence(s) from the input where the coherence breaks down.
-3. Keep your feedback and suggestions EXTREMELY short and concise. Do not write long paragraphs. Keep it to a single short sentence if possible.
-4. If the section is coherent and makes sense, return an empty array.
-5. Respond in English.
+1. Focus ONLY on coherence and logical flow between sections.
+2. Reference sections by their chunk number (e.g. "Between chunk 3 and chunk 4...").
+3. For each issue, provide the chunk number where the problem occurs.
+4. Keep your feedback and suggestions EXTREMELY short and concise. Do not write long paragraphs. Keep it to a single short sentence if possible.
+5. If the document is coherent and makes sense, return an empty array.
+6. Respond in English.
 
 OUTPUT FORMAT — respond with a JSON array and nothing else:
 [
   {{
-    "sentence": "The exact sentence where coherence breaks down.",
+    "chunk_index": 3,
     "feedback": "Brief explanation of the coherence issue.",
     "suggestion": "A brief suggestion for how to fix the issue.",
     "severity": "coherence"
   }}
 ]
 
-If the section is coherent, respond with: []
+If the document is coherent, respond with: []
 """
 
 
@@ -103,7 +104,7 @@ def get_factcheck_prompt(language="", harshness="", skill_level=""):
     harshness_instruction = f"\n- Tone/Harshness: {harshness_desc}" if harshness else ""
     skill_instruction = f"\n- Target Audience/Skill Level: {skill_level}" if skill_level else ""
 
-    return f"""You are a fact checker. Your job is to flag claims in the text that appear factually incorrect, dubious, or unverifiable.
+    return f"""You are a fact checker. You receive a series of numbered summaries representing consecutive sections of a document. Your job is to flag claims that appear factually incorrect, dubious, or unverifiable.
 
 CONTEXT:{language_instruction}{harshness_instruction}{skill_instruction}
 
@@ -111,22 +112,21 @@ WHAT TO FLAG:
 1. Dates, numbers, or statistics that appear incorrect or implausible.
 2. Scientific or historical claims that contradict established knowledge.
 3. Attributions (e.g. quotes, discoveries, inventions) that appear wrong.
-4. Overly vague or unsubstantiated opinion-based statements presented as fact (e.g. "Everyone knows that...", "It is obvious that...").
-5. Internal inconsistencies — the text contradicts itself about facts.
+4. Overly vague or unsubstantiated opinion-based statements presented as fact.
+5. Internal inconsistencies — sections that contradict each other about facts.
 
 RULES:
 1. Only flag claims where you have reasonable confidence they are wrong or suspiciously vague.
-2. Do NOT flag subjective opinions that are clearly presented as opinions.
-3. DO flag opinions that are too vague or presented as if they were established facts.
-4. Quote the EXACT sentence containing the claim.
-5. Keep your feedback and suggestions EXTREMELY short and concise. Do not write long paragraphs. Keep it to a single short sentence if possible.
-6. If all claims appear accurate, return an empty array.
-7. Respond in English.
+2. Reference sections by their chunk number.
+3. For each issue, provide the chunk number where the claim occurs.
+4. Keep your feedback and suggestions EXTREMELY short and concise. Do not write long paragraphs. Keep it to a single short sentence if possible.
+5. If all claims appear accurate, return an empty array.
+6. Respond in English.
 
 OUTPUT FORMAT — respond with a JSON array and nothing else:
 [
   {{
-    "sentence": "The exact sentence containing the dubious claim.",
+    "chunk_index": 2,
     "feedback": "Brief explanation of why this claim is flagged.",
     "suggestion": "A brief suggestion for how to fix the issue.",
     "severity": "factcheck"

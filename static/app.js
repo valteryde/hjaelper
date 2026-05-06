@@ -199,7 +199,11 @@
             }
 
             estWords.textContent = data.words;
-            estChunks.textContent = data.num_chunks;
+            if (data.num_tasks && data.num_tasks > data.num_chunks) {
+                estChunks.textContent = `${data.num_chunks} (${data.num_tasks} tasks)`;
+            } else {
+                estChunks.textContent = data.num_chunks;
+            }
             estTokensIn.textContent = data.estimated_input_tokens.toLocaleString();
             estTokensOut.textContent = data.estimated_output_tokens.toLocaleString();
             estTime.textContent = data.time_estimate_sec;
@@ -339,7 +343,7 @@
                         );
                         progressFill.style.width = pct + "%";
                         progressDetail.textContent =
-                            `${data.completed_chunks} / ${data.total_chunks} chunks`;
+                            `${data.completed_chunks} / ${data.total_chunks} tasks`;
                     }
                 } else if (data.status === "done") {
                     clearInterval(interval);

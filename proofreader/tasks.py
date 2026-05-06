@@ -237,10 +237,10 @@ def _find_and_annotate(doc, blocks, sentence, feedback, severity="medium", sugge
     return False
 
 
-def _annotate_thread_finding(doc, chunks, chunk_index, feedback):
+def _annotate_chunk_finding(doc, chunks, chunk_index, feedback, severity="thread"):
     """
-    Annotate a thread-level finding on the first page of the referenced chunk.
-    Since thread findings don't reference specific sentences, we place a
+    Annotate a chunk-level finding on the first page of the referenced chunk.
+    Since piggyback findings don't reference specific sentences, we place a
     sticky note at the top of the chunk's first block.
     """
     if chunk_index < 0 or chunk_index >= len(chunks):
@@ -252,8 +252,8 @@ def _annotate_thread_finding(doc, chunks, chunk_index, feedback):
 
     first_block = chunk["blocks"][0]
     page = doc[first_block["page"]]
-    color = SEVERITY_COLORS["thread"]
-    note_text = f"[THREAD] {feedback}"
+    color = SEVERITY_COLORS.get(severity, SEVERITY_COLORS["thread"])
+    note_text = f"[{severity.upper()}] {feedback}"
 
     rect = fitz.Rect(first_block["bbox"])
     top_left = fitz.Point(rect.x0, rect.y0)
@@ -328,70 +328,11 @@ def proofread_chunk(self, chunk_data, api_key, model, provider, job_id,
     return result
 
 
-@shared_task(bind=True, max_retries=2, default_retry_delay=5)
-def coherence_check_chunk(self, chunk_data, api_key, model, provider, job_id,
-                          language="", harshness="", skill_level=""):
-    """
-    Check a single chunk for logical coherence.
-    Returns { chunk, findings } for the annotation callback.
-    """
-    try:
-        job_obj = Job.objects.get(id=job_id)
-        if job_obj.status == Job.Status.ERROR:
-            raise Exception("Job cancelled by user.")
-
-        client, call_fn = _make_client(provider, api_key)
-        system_prompt = get_coherence_prompt(language, harshness, skill_level)
-        raw = call_fn(client, model, chunk_data["text"], system_prompt)
-        findings = _parse_ai_response(raw)
-    except Exception as exc:
-        logger.warning("Coherence check failed: %s", exc)
-        findings = []
-
-    Job.objects.filter(id=job_id).update(
-        completed_chunks=F("completed_chunks") + 1
-    )
-
-    return {
-        "chunk": chunk_data,
-        "findings": findings,
-        "task_type": "coherence",
-    }
-
-
-@shared_task(bind=True, max_retries=2, default_retry_delay=5)
-def factcheck_chunk(self, chunk_data, api_key, model, provider, job_id,
-                    language="", harshness="", skill_level=""):
-    """
-    Fact-check a single chunk.
-    Returns { chunk, findings } for the annotation callback.
-    """
-    try:
-        job_obj = Job.objects.get(id=job_id)
-        if job_obj.status == Job.Status.ERROR:
-            raise Exception("Job cancelled by user.")
-
-        client, call_fn = _make_client(provider, api_key)
-        system_prompt = get_factcheck_prompt(language, harshness, skill_level)
-        raw = call_fn(client, model, chunk_data["text"], system_prompt)
-        findings = _parse_ai_response(raw)
-    except Exception as exc:
-        logger.warning("Fact-check failed: %s", exc)
-        findings = []
-
-    Job.objects.filter(id=job_id).update(
-        completed_chunks=F("completed_chunks") + 1
-    )
-
-    return {
-        "chunk": chunk_data,
-        "findings": findings,
-        "task_type": "factcheck",
-    }
 
 
 @shared_task
 def annotate_and_save(results, job_id, enable_thread=False, enable_grading=False,
+                      enable_coherence=False, enable_factcheck=False,
                       api_key="", model="", provider="openai",
                       language="", harshness="", skill_level=""):
     """
@@ -433,26 +374,58 @@ def annotate_and_save(results, job_id, enable_thread=False, enable_grading=False
                 if sentence and feedback:
                     _find_and_annotate(doc, blocks, sentence, feedback, severity, suggestion)
 
-        # Common thread analysis — one extra API call using collected summaries.
-        if enable_thread and summaries and api_key:
-            try:
-                thread_input = "\n\n".join(
-                    f"CHUNK {i + 1}:\n{s}" for i, s in enumerate(summaries)
-                )
-                client, call_fn = _make_client(provider, api_key)
-                system_prompt = get_thread_prompt(language, harshness, skill_level)
-                raw = call_fn(client, model, thread_input, system_prompt)
-                thread_findings = _parse_ai_response(raw)
+        # Piggyback analysis — run extra passes globally over collected summaries.
+        needs_piggyback = enable_thread or enable_coherence or enable_factcheck
+        if needs_piggyback and summaries and api_key:
+            piggyback_input = "\n\n".join(
+                f"CHUNK {i + 1}:\n{s}" for i, s in enumerate(summaries)
+            )
+            client, call_fn = _make_client(provider, api_key)
+            
+            if enable_thread:
+                try:
+                    system_prompt = get_thread_prompt(language, harshness, skill_level)
+                    raw = call_fn(client, model, piggyback_input, system_prompt)
+                    thread_findings = _parse_ai_response(raw)
 
-                for finding in thread_findings:
-                    chunk_idx = finding.get("chunk_index")
-                    feedback = finding.get("feedback", "")
-                    if chunk_idx is not None and feedback:
-                        # Convert 1-based chunk index from AI to 0-based.
-                        idx = int(chunk_idx) - 1
-                        _annotate_thread_finding(doc, chunk_list, idx, feedback)
-            except Exception as exc:
-                logger.warning("Thread analysis failed for job %s: %s", job_id, exc)
+                    for finding in thread_findings:
+                        chunk_idx = finding.get("chunk_index")
+                        feedback = finding.get("feedback", "")
+                        if chunk_idx is not None and feedback:
+                            idx = int(chunk_idx) - 1
+                            _annotate_chunk_finding(doc, chunk_list, idx, feedback, "thread")
+                except Exception as exc:
+                    logger.warning("Thread analysis failed for job %s: %s", job_id, exc)
+
+            if enable_coherence:
+                try:
+                    system_prompt = get_coherence_prompt(language, harshness, skill_level)
+                    raw = call_fn(client, model, piggyback_input, system_prompt)
+                    coherence_findings = _parse_ai_response(raw)
+
+                    for finding in coherence_findings:
+                        chunk_idx = finding.get("chunk_index")
+                        feedback = finding.get("feedback", "")
+                        if chunk_idx is not None and feedback:
+                            idx = int(chunk_idx) - 1
+                            _annotate_chunk_finding(doc, chunk_list, idx, feedback, "coherence")
+                except Exception as exc:
+                    logger.warning("Coherence analysis failed for job %s: %s", job_id, exc)
+
+            if enable_factcheck:
+                try:
+                    system_prompt = get_factcheck_prompt(language, harshness, skill_level)
+                    raw = call_fn(client, model, piggyback_input, system_prompt)
+                    factcheck_findings = _parse_ai_response(raw)
+
+                    for finding in factcheck_findings:
+                        chunk_idx = finding.get("chunk_index")
+                        feedback = finding.get("feedback", "")
+                        if chunk_idx is not None and feedback:
+                            idx = int(chunk_idx) - 1
+                            _annotate_chunk_finding(doc, chunk_list, idx, feedback, "factcheck")
+                except Exception as exc:
+                    logger.warning("Fact-check analysis failed for job %s: %s", job_id, exc)
 
         # Document grading analysis
         if enable_grading and summaries and api_key:
@@ -545,35 +518,17 @@ def process_pdf(job_id, api_key, model, provider="openai",
         # Build the list of parallel tasks.
         tasks = []
 
+        needs_summary = enable_thread or enable_grading or enable_coherence or enable_factcheck
+
         # Always: proofread each chunk.
         for chunk in chunks:
             tasks.append(
                 proofread_chunk.s(
                     chunk, api_key, model, provider, str(job_id),
                     language, harshness, skill_level, custom_prompt,
-                    include_summary=(enable_thread or enable_grading),
+                    include_summary=needs_summary,
                 )
             )
-
-        # Optional: coherence check each chunk.
-        if enable_coherence:
-            for chunk in chunks:
-                tasks.append(
-                    coherence_check_chunk.s(
-                        chunk, api_key, model, provider, str(job_id),
-                        language, harshness, skill_level,
-                    )
-                )
-
-        # Optional: fact-check each chunk.
-        if enable_factcheck:
-            for chunk in chunks:
-                tasks.append(
-                    factcheck_chunk.s(
-                        chunk, api_key, model, provider, str(job_id),
-                        language, harshness, skill_level,
-                    )
-                )
 
         job.total_chunks = len(tasks)
         job.save(update_fields=["total_chunks"])
@@ -584,9 +539,11 @@ def process_pdf(job_id, api_key, model, provider="openai",
             str(job_id),
             enable_thread=enable_thread,
             enable_grading=enable_grading,
-            api_key=api_key if (enable_thread or enable_grading) else "",
-            model=model if (enable_thread or enable_grading) else "",
-            provider=provider if (enable_thread or enable_grading) else "openai",
+            enable_coherence=enable_coherence,
+            enable_factcheck=enable_factcheck,
+            api_key=api_key if needs_summary else "",
+            model=model if needs_summary else "",
+            provider=provider if needs_summary else "openai",
             language=language,
             harshness=harshness,
             skill_level=skill_level,

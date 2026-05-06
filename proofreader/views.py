@@ -159,14 +159,14 @@ def estimate_cost(request):
     num_chunks = len(chunks)
     
     passes_per_chunk = 1
-    if enable_coherence: passes_per_chunk += 1
-    if enable_factcheck: passes_per_chunk += 1
     
     total_chunk_passes = num_chunks * passes_per_chunk
     
     extra_passes = 0
     if enable_thread: extra_passes += 1
     if enable_grading: extra_passes += 1
+    if enable_coherence: extra_passes += 1
+    if enable_factcheck: extra_passes += 1
     
     input_tokens_per_pass = (chunk_size * 1.33) + 300
     total_input_tokens = int((num_chunks * input_tokens_per_pass * passes_per_chunk) + (extra_passes * num_chunks * 200))
@@ -193,6 +193,7 @@ def estimate_cost(request):
         "job_id": str(job.id),
         "words": words,
         "num_chunks": num_chunks,
+        "num_tasks": total_chunk_passes,
         "estimated_input_tokens": total_input_tokens,
         "estimated_output_tokens": total_output_tokens,
         "cost_estimate": cost_estimate,
