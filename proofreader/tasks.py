@@ -267,7 +267,7 @@ def _annotate_thread_finding(doc, chunks, chunk_index, feedback):
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=5)
 def proofread_chunk(self, chunk_data, api_key, model, provider, job_id,
-                    language="", skill_level="", custom_prompt="",
+                    language="", harshness="", skill_level="", custom_prompt="",
                     include_summary=False):
     """
     Process a single chunk through the AI.
@@ -275,7 +275,7 @@ def proofread_chunk(self, chunk_data, api_key, model, provider, job_id,
     """
     try:
         client, call_fn = _make_client(provider, api_key)
-        system_prompt = get_system_prompt(language, skill_level, custom_prompt,
+        system_prompt = get_system_prompt(language, harshness, skill_level, custom_prompt,
                                           include_summary=include_summary)
         raw = call_fn(client, model, chunk_data["text"], system_prompt)
 
@@ -306,14 +306,14 @@ def proofread_chunk(self, chunk_data, api_key, model, provider, job_id,
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=5)
 def coherence_check_chunk(self, chunk_data, api_key, model, provider, job_id,
-                          language="", skill_level=""):
+                          language="", harshness="", skill_level=""):
     """
     Check a single chunk for logical coherence.
     Returns { chunk, findings } for the annotation callback.
     """
     try:
         client, call_fn = _make_client(provider, api_key)
-        system_prompt = get_coherence_prompt(language, skill_level)
+        system_prompt = get_coherence_prompt(language, harshness, skill_level)
         raw = call_fn(client, model, chunk_data["text"], system_prompt)
         findings = _parse_ai_response(raw)
     except Exception as exc:
@@ -333,14 +333,14 @@ def coherence_check_chunk(self, chunk_data, api_key, model, provider, job_id,
 
 @shared_task(bind=True, max_retries=2, default_retry_delay=5)
 def factcheck_chunk(self, chunk_data, api_key, model, provider, job_id,
-                    language="", skill_level=""):
+                    language="", harshness="", skill_level=""):
     """
     Fact-check a single chunk.
     Returns { chunk, findings } for the annotation callback.
     """
     try:
         client, call_fn = _make_client(provider, api_key)
-        system_prompt = get_factcheck_prompt(language, skill_level)
+        system_prompt = get_factcheck_prompt(language, harshness, skill_level)
         raw = call_fn(client, model, chunk_data["text"], system_prompt)
         findings = _parse_ai_response(raw)
     except Exception as exc:
@@ -361,7 +361,7 @@ def factcheck_chunk(self, chunk_data, api_key, model, provider, job_id,
 @shared_task
 def annotate_and_save(results, job_id, enable_thread=False,
                       api_key="", model="", provider="openai",
-                      language="", skill_level=""):
+                      language="", harshness="", skill_level=""):
     """
     Chord callback: receives all proofread results, annotates the PDF,
     and saves the final output.
@@ -408,7 +408,7 @@ def annotate_and_save(results, job_id, enable_thread=False,
                     f"CHUNK {i + 1}:\n{s}" for i, s in enumerate(summaries)
                 )
                 client, call_fn = _make_client(provider, api_key)
-                system_prompt = get_thread_prompt(language, skill_level)
+                system_prompt = get_thread_prompt(language, harshness, skill_level)
                 raw = call_fn(client, model, thread_input, system_prompt)
                 thread_findings = _parse_ai_response(raw)
 
@@ -450,7 +450,7 @@ def mark_job_error(request, exc, traceback, job_id):
 @shared_task
 def process_pdf(job_id, api_key, model, provider="openai",
                 chunk_size=DEFAULT_CHUNK_WORD_LIMIT,
-                language="", skill_level="", custom_prompt="",
+                language="", harshness="", skill_level="", custom_prompt="",
                 enable_thread=False, enable_coherence=False,
                 enable_factcheck=False):
     """
@@ -491,7 +491,7 @@ def process_pdf(job_id, api_key, model, provider="openai",
             tasks.append(
                 proofread_chunk.s(
                     chunk, api_key, model, provider, str(job_id),
-                    language, skill_level, custom_prompt,
+                    language, harshness, skill_level, custom_prompt,
                     include_summary=enable_thread,
                 )
             )
@@ -502,7 +502,7 @@ def process_pdf(job_id, api_key, model, provider="openai",
                 tasks.append(
                     coherence_check_chunk.s(
                         chunk, api_key, model, provider, str(job_id),
-                        language, skill_level,
+                        language, harshness, skill_level,
                     )
                 )
 
@@ -512,7 +512,7 @@ def process_pdf(job_id, api_key, model, provider="openai",
                 tasks.append(
                     factcheck_chunk.s(
                         chunk, api_key, model, provider, str(job_id),
-                        language, skill_level,
+                        language, harshness, skill_level,
                     )
                 )
 
@@ -528,6 +528,7 @@ def process_pdf(job_id, api_key, model, provider="openai",
             model=model if enable_thread else "",
             provider=provider if enable_thread else "openai",
             language=language,
+            harshness=harshness,
             skill_level=skill_level,
         )
 

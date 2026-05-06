@@ -1,5 +1,15 @@
-def get_system_prompt(language="", skill_level="", custom_prompt="", include_summary=False):
+HARSHNESS_DESCRIPTIONS = {
+    "soft": "Be extremely gentle. Only flag the most obvious errors. Ignore minor stylistic issues.",
+    "constructive": "Provide helpful, balanced feedback. Point out errors but maintain a supportive tone.",
+    "strict": "Be rigorous and precise. Flag all grammatical errors and stylistic inconsistencies.",
+    "brutal": "Be highly critical. Flag every minor imperfection and suboptimal word choice.",
+    "almost_mean": "Be ruthless and pedantic. Point out every single flaw, no matter how small, and hold the text to an uncompromising standard.",
+}
+
+def get_system_prompt(language="", harshness="", skill_level="", custom_prompt="", include_summary=False):
     language_instruction = f"\n- Target Language: {language}" if language else ""
+    harshness_desc = HARSHNESS_DESCRIPTIONS.get(harshness, HARSHNESS_DESCRIPTIONS["strict"])
+    harshness_instruction = f"\n- Tone/Harshness: {harshness_desc}" if harshness else ""
     skill_instruction = f"\n- Target Audience/Skill Level: {skill_level}" if skill_level else ""
     custom_instruction = f"\n\nCUSTOM INSTRUCTIONS:\n{custom_prompt}" if custom_prompt else ""
 
@@ -23,7 +33,7 @@ RULES:
 2. For each issue you find, output the EXACT sentence (or phrase) from the input that contains the problem, a short explanation of what is wrong, a brief suggestion for a fix, and a severity rating.
 3. Focus on: grammar errors, spelling mistakes, unclear phrasing, inconsistent terminology, awkward sentence structure, and academic tone issues.
 4. If a passage is correct, do not mention it.
-5. Evaluate the text based on the following context:{language_instruction}{skill_instruction}
+5. Evaluate the text based on the following context:{language_instruction}{harshness_instruction}{skill_instruction}
 7. Respond in English.{summary_rule}
 
 SEVERITY LEVELS:
@@ -47,13 +57,15 @@ If you find no issues, respond with {"an object with an empty findings array and
 """
 
 
-def get_coherence_prompt(language="", skill_level=""):
+def get_coherence_prompt(language="", harshness="", skill_level=""):
     language_instruction = f"\n- Target Language: {language}" if language else ""
+    harshness_desc = HARSHNESS_DESCRIPTIONS.get(harshness, HARSHNESS_DESCRIPTIONS["strict"])
+    harshness_instruction = f"\n- Tone/Harshness: {harshness_desc}" if harshness else ""
     skill_instruction = f"\n- Target Audience/Skill Level: {skill_level}" if skill_level else ""
 
     return f"""You are a document coherence analyst. Your job is to evaluate whether a section of text makes logical sense AS A WHOLE — not just whether individual sentences are grammatically correct.
 
-CONTEXT:{language_instruction}{skill_instruction}
+CONTEXT:{language_instruction}{harshness_instruction}{skill_instruction}
 
 WHAT TO LOOK FOR:
 1. Paragraphs or sentences that contradict each other within the section.
@@ -83,13 +95,15 @@ If the section is coherent, respond with: []
 """
 
 
-def get_factcheck_prompt(language="", skill_level=""):
+def get_factcheck_prompt(language="", harshness="", skill_level=""):
     language_instruction = f"\n- Target Language: {language}" if language else ""
+    harshness_desc = HARSHNESS_DESCRIPTIONS.get(harshness, HARSHNESS_DESCRIPTIONS["strict"])
+    harshness_instruction = f"\n- Tone/Harshness: {harshness_desc}" if harshness else ""
     skill_instruction = f"\n- Target Audience/Skill Level: {skill_level}" if skill_level else ""
 
     return f"""You are a fact checker. Your job is to flag claims in the text that appear factually incorrect, dubious, or unverifiable.
 
-CONTEXT:{language_instruction}{skill_instruction}
+CONTEXT:{language_instruction}{harshness_instruction}{skill_instruction}
 
 WHAT TO FLAG:
 1. Dates, numbers, or statistics that appear incorrect or implausible.
@@ -120,13 +134,15 @@ If no issues are found, respond with: []
 """
 
 
-def get_thread_prompt(language="", skill_level=""):
+def get_thread_prompt(language="", harshness="", skill_level=""):
     language_instruction = f"\n- Target Language: {language}" if language else ""
+    harshness_desc = HARSHNESS_DESCRIPTIONS.get(harshness, HARSHNESS_DESCRIPTIONS["strict"])
+    harshness_instruction = f"\n- Tone/Harshness: {harshness_desc}" if harshness else ""
     skill_instruction = f"\n- Target Audience/Skill Level: {skill_level}" if skill_level else ""
 
     return f"""You are a document structure analyst. You receive a series of numbered summaries representing consecutive sections of a document. Your job is to evaluate whether the document maintains a common thread — a coherent argument, narrative, or logical progression.
 
-CONTEXT:{language_instruction}{skill_instruction}
+CONTEXT:{language_instruction}{harshness_instruction}{skill_instruction}
 
 WHAT TO LOOK FOR:
 1. Sections where the topic shifts without connection to the overall theme.

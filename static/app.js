@@ -8,6 +8,7 @@
     const modelInput = document.getElementById("model");
     const chunkSizeInput = document.getElementById("chunk-size");
     const languageInput = document.getElementById("language");
+    const harshnessInput = document.getElementById("harshness");
     const skillLevelInput = document.getElementById("skill-level");
     const customPromptInput = document.getElementById("custom-prompt");
     const submitBtn = document.getElementById("submit-btn");
@@ -45,6 +46,9 @@
     const savedLanguage = localStorage.getItem("hjaelper_language");
     if (savedLanguage) languageInput.value = savedLanguage;
 
+    const savedHarshness = localStorage.getItem("hjaelper_harshness");
+    if (savedHarshness) harshnessInput.value = savedHarshness;
+
     const savedSkillLevel = localStorage.getItem("hjaelper_skill_level");
     if (savedSkillLevel) skillLevelInput.value = savedSkillLevel;
 
@@ -69,6 +73,7 @@
         const model = modelInput.value.trim();
         const chunkSize = chunkSizeInput.value;
         const language = languageInput.value.trim();
+        const harshness = harshnessInput.value.trim();
         const skillLevel = skillLevelInput.value.trim();
         const customPrompt = customPromptInput.value.trim();
         const enableThread = enableThreadInput.checked;
@@ -85,6 +90,7 @@
         localStorage.setItem("hjaelper_model", model);
         localStorage.setItem("hjaelper_chunk_size", chunkSize);
         localStorage.setItem("hjaelper_language", language);
+        localStorage.setItem("hjaelper_harshness", harshness);
         localStorage.setItem("hjaelper_skill_level", skillLevel);
         localStorage.setItem("hjaelper_custom_prompt", customPrompt);
         localStorage.setItem("hjaelper_enable_thread", enableThread);
@@ -99,6 +105,7 @@
         formData.append("model", model);
         formData.append("chunk_size", chunkSize);
         formData.append("language", language);
+        formData.append("harshness", harshness);
         formData.append("skill_level", skillLevel);
         formData.append("custom_prompt", customPrompt);
         formData.append("enable_thread", enableThread);

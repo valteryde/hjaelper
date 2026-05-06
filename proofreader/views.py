@@ -17,6 +17,7 @@ def upload_pdf(request):
     model = request.POST.get("model", "").strip()
     provider = request.POST.get("provider", "openai").strip().lower()
     language = request.POST.get("language", "").strip()
+    harshness = request.POST.get("harshness", "").strip()
     skill_level = request.POST.get("skill_level", "").strip()
     custom_prompt = request.POST.get("custom_prompt", "").strip()
 
@@ -54,7 +55,7 @@ def upload_pdf(request):
     # never persisted to the database.
     process_pdf.delay(
         str(job.id), api_key, model, provider, chunk_size,
-        language, skill_level, custom_prompt,
+        language, harshness, skill_level, custom_prompt,
         enable_thread, enable_coherence, enable_factcheck,
     )
 
