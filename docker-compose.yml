@@ -22,7 +22,7 @@ services:
 
   worker:
     build: .
-    command: celery -A hjaelper worker -l info
+    command: celery -A hjaelper worker -l info --concurrency=8
     volumes:
       - .:/app
       - media:/app/media

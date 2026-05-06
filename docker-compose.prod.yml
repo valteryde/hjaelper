@@ -20,7 +20,7 @@ services:
   worker:
     image: ghcr.io/valteryde/hjaelper:main
     restart: always
-    command: celery -A hjaelper worker -l info
+    command: celery -A hjaelper worker -l info --concurrency=8
     volumes:
       - media:/app/media
       - data:/app/data
