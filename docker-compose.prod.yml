@@ -10,6 +10,7 @@ services:
       - "${PORT:-8000}:8000"
     volumes:
       - media:/app/media
+      - data:/app/data
     depends_on:
       - redis
     environment:
@@ -22,6 +23,7 @@ services:
     command: celery -A hjaelper worker -l info
     volumes:
       - media:/app/media
+      - data:/app/data
     depends_on:
       - redis
     environment:
@@ -30,3 +32,4 @@ services:
 
 volumes:
   media:
+  data:
