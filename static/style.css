@@ -295,6 +295,18 @@ button:disabled {
     color: #666;
 }
 
+.secondary-btn {
+    margin-top: 2rem;
+    background-color: var(--c-bg);
+    color: var(--c-text);
+}
+
+.secondary-btn:hover:not(:disabled) {
+    background-color: #FF3B30; /* iOS Red */
+    color: var(--c-white);
+    border-color: #FF3B30;
+}
+
 .icon-btn {
     margin-left: auto;
     align-self: center;

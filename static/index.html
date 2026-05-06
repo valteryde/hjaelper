@@ -241,7 +241,32 @@
                             <small>Stored locally. Never persisted.</small>
                         </div>
                     </div>
-                    <button id="submit-btn" type="button">UPLOAD & PROOFREAD</button>
+                    <button id="submit-btn" type="button">UPLOAD & ESTIMATE</button>
+                </section>
+
+                <!-- Confirm Section -->
+                <section id="confirm-section" hidden>
+                    <div class="section-header">
+                        <span class="step-num">02</span>
+                        <h3>CONFIRMATION</h3>
+                    </div>
+                    <div class="form-grid">
+                        <div class="field full-width">
+                            <label>Document Statistics</label>
+                            <div class="mono" style="margin-bottom: 0.5rem">Words: <span id="est-words">-</span></div>
+                            <div class="mono" style="margin-bottom: 0.5rem">Chunks: <span id="est-chunks">-</span></div>
+                            <div class="mono" style="margin-bottom: 0.5rem">Tokens (In/Out): <span id="est-tokens-in">-</span> / <span id="est-tokens-out">-</span></div>
+                        </div>
+                        <div class="field full-width">
+                            <label>Estimates</label>
+                            <div class="mono" style="margin-bottom: 0.5rem">Time Estimate: ~<span id="est-time">-</span>s</div>
+                            <div class="mono">Cost Estimate: <span id="est-cost">Unknown</span></div>
+                        </div>
+                        <div class="field full-width" style="display: flex; gap: 1rem;">
+                            <button id="confirm-btn" type="button" style="flex: 2;">START PROOFREADING</button>
+                            <button id="cancel-btn" type="button" class="secondary-btn" style="flex: 1; background: transparent; border: 2px solid var(--text); color: var(--text);">CANCEL</button>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- Progress Section -->
@@ -255,7 +280,11 @@
                         <div class="progress-bar">
                             <div id="progress-fill" class="progress-fill"></div>
                         </div>
-                        <p id="progress-detail" class="mono"></p>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                            <p id="progress-detail" class="mono"></p>
+                            <p id="timer-text" class="mono">Elapsed: 00:00</p>
+                        </div>
+                        <button id="stop-btn" class="secondary-btn" type="button" style="background: transparent; border: 2px solid var(--text); color: var(--text); padding: 0.75rem;">STOP PROCESS</button>
                     </div>
                 </section>
 

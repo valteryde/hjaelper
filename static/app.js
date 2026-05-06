@@ -20,10 +20,22 @@
     const enableGradingInput = document.getElementById("enable-grading");
 
     const shareBtn = document.getElementById("share-btn");
+    const stopBtn = document.getElementById("stop-btn");
 
     const uploadSection = document.getElementById("upload-section");
+    const confirmSection = document.getElementById("confirm-section");
+    const confirmBtn = document.getElementById("confirm-btn");
+    const cancelBtn = document.getElementById("cancel-btn");
+    const estWords = document.getElementById("est-words");
+    const estChunks = document.getElementById("est-chunks");
+    const estTokensIn = document.getElementById("est-tokens-in");
+    const estTokensOut = document.getElementById("est-tokens-out");
+    const estTime = document.getElementById("est-time");
+    const estCost = document.getElementById("est-cost");
+
     const progressSection = document.getElementById("progress-section");
     const statusText = document.getElementById("status-text");
+    const timerText = document.getElementById("timer-text");
     const progressFill = document.getElementById("progress-fill");
     const progressDetail = document.getElementById("progress-detail");
 
@@ -173,7 +185,7 @@
         hideError();
 
         try {
-            const res = await fetch("/api/upload/", {
+            const res = await fetch("/api/estimate/", {
                 method: "POST",
                 body: formData,
             });
@@ -181,23 +193,134 @@
             const data = await res.json();
 
             if (!res.ok) {
-                showError(data.error || "Upload failed.");
+                showError(data.error || "Estimation failed.");
                 submitBtn.disabled = false;
                 return;
             }
 
-            // Switch to progress view
-            uploadSection.hidden = true;
-            progressSection.hidden = false;
-            downloadSection.hidden = true;
+            estWords.textContent = data.words;
+            estChunks.textContent = data.num_chunks;
+            estTokensIn.textContent = data.estimated_input_tokens.toLocaleString();
+            estTokensOut.textContent = data.estimated_output_tokens.toLocaleString();
+            estTime.textContent = data.time_estimate_sec;
+            estCost.textContent = data.cost_estimate ? `$${data.cost_estimate.toFixed(3)}` : "Unknown";
 
-            pollStatus(data.job_id);
+            confirmBtn.dataset.jobId = data.job_id;
+
+            uploadSection.hidden = true;
+            confirmSection.hidden = false;
+            submitBtn.disabled = false;
 
         } catch (err) {
             showError("Network error: " + err.message);
             submitBtn.disabled = false;
         }
     });
+
+    let timerInterval = null;
+    let startTime = 0;
+
+    confirmBtn.addEventListener("click", async () => {
+        const jobId = confirmBtn.dataset.jobId;
+        if (!jobId) return;
+
+        const apiKey = apiKeyInput.value.trim();
+        const provider = providerSelect.value;
+        const model = modelInput.value.trim();
+        const chunkSize = chunkSizeInput.value;
+        const language = languageInput.value.trim();
+        const harshness = harshnessInput.value.trim();
+        const skillLevel = skillLevelInput.value.trim();
+        const customPrompt = customPromptInput.value.trim();
+        const enableThread = enableThreadInput.checked;
+        const enableCoherence = enableCoherenceInput.checked;
+        const enableFactcheck = enableFactcheckInput.checked;
+        const enableGrading = enableGradingInput.checked;
+
+        const formData = new FormData();
+        formData.append("job_id", jobId);
+        formData.append("api_key", apiKey);
+        formData.append("provider", provider);
+        formData.append("model", model);
+        formData.append("chunk_size", chunkSize);
+        formData.append("language", language);
+        formData.append("harshness", harshness);
+        formData.append("skill_level", skillLevel);
+        formData.append("custom_prompt", customPrompt);
+        formData.append("enable_thread", enableThread);
+        formData.append("enable_coherence", enableCoherence);
+        formData.append("enable_factcheck", enableFactcheck);
+        formData.append("enable_grading", enableGrading);
+
+        confirmBtn.disabled = true;
+        hideError();
+
+        try {
+            const res = await fetch("/api/start/", {
+                method: "POST",
+                body: formData,
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                showError(data.error || "Failed to start.");
+                confirmBtn.disabled = false;
+                return;
+            }
+
+            localStorage.setItem("hjaelper_current_job_id", data.job_id);
+
+            confirmSection.hidden = true;
+            progressSection.hidden = false;
+            confirmBtn.disabled = false;
+
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+                const secs = String(elapsed % 60).padStart(2, '0');
+                timerText.textContent = `Elapsed: ${mins}:${secs}`;
+            }, 1000);
+
+            pollStatus(data.job_id);
+
+        } catch (err) {
+            showError("Network error: " + err.message);
+            confirmBtn.disabled = false;
+        }
+    });
+
+    cancelBtn.addEventListener("click", () => {
+        confirmSection.hidden = true;
+        uploadSection.hidden = false;
+    });
+
+    // Stop process handler
+    stopBtn.addEventListener("click", async () => {
+        const jobId = localStorage.getItem("hjaelper_current_job_id");
+        if (!jobId) return;
+
+        stopBtn.disabled = true;
+        stopBtn.textContent = "STOPPING...";
+
+        try {
+            await fetch(`/api/stop/${jobId}/`, { method: "POST" });
+            // The poller will pick up the "error" status (Cancelled by user)
+        } catch (err) {
+            console.error("Failed to stop job:", err);
+            stopBtn.disabled = false;
+            stopBtn.textContent = "STOP PROCESS";
+        }
+    });
+
+    // Check for running process on load
+    const currentJobId = localStorage.getItem("hjaelper_current_job_id");
+    if (currentJobId) {
+        uploadSection.hidden = true;
+        progressSection.hidden = false;
+        pollStatus(currentJobId);
+    }
 
     // Poll job status every 2 seconds
     function pollStatus(jobId) {
@@ -220,11 +343,15 @@
                     }
                 } else if (data.status === "done") {
                     clearInterval(interval);
+                    if (timerInterval) clearInterval(timerInterval);
+                    localStorage.removeItem("hjaelper_current_job_id");
                     progressSection.hidden = true;
                     downloadSection.hidden = false;
                     downloadLink.href = `/api/download/${jobId}/`;
                 } else if (data.status === "error") {
                     clearInterval(interval);
+                    if (timerInterval) clearInterval(timerInterval);
+                    localStorage.removeItem("hjaelper_current_job_id");
                     progressSection.hidden = true;
                     showError(data.error_message || "An unknown error occurred.");
                     resetUpload();
@@ -249,6 +376,10 @@
 
     function resetUpload() {
         uploadSection.hidden = false;
+        confirmSection.hidden = true;
         submitBtn.disabled = false;
+        confirmBtn.disabled = false;
+        stopBtn.disabled = false;
+        stopBtn.textContent = "STOP PROCESS";
     }
 })();

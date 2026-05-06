@@ -294,6 +294,10 @@ def proofread_chunk(self, chunk_data, api_key, model, provider, job_id,
     Returns { chunk, findings, summary? } for the annotation callback.
     """
     try:
+        job_obj = Job.objects.get(id=job_id)
+        if job_obj.status == Job.Status.ERROR:
+            raise Exception("Job cancelled by user.")
+            
         client, call_fn = _make_client(provider, api_key)
         system_prompt = get_system_prompt(language, harshness, skill_level, custom_prompt,
                                           include_summary=include_summary)
@@ -332,6 +336,10 @@ def coherence_check_chunk(self, chunk_data, api_key, model, provider, job_id,
     Returns { chunk, findings } for the annotation callback.
     """
     try:
+        job_obj = Job.objects.get(id=job_id)
+        if job_obj.status == Job.Status.ERROR:
+            raise Exception("Job cancelled by user.")
+
         client, call_fn = _make_client(provider, api_key)
         system_prompt = get_coherence_prompt(language, harshness, skill_level)
         raw = call_fn(client, model, chunk_data["text"], system_prompt)
@@ -359,6 +367,10 @@ def factcheck_chunk(self, chunk_data, api_key, model, provider, job_id,
     Returns { chunk, findings } for the annotation callback.
     """
     try:
+        job_obj = Job.objects.get(id=job_id)
+        if job_obj.status == Job.Status.ERROR:
+            raise Exception("Job cancelled by user.")
+
         client, call_fn = _make_client(provider, api_key)
         system_prompt = get_factcheck_prompt(language, harshness, skill_level)
         raw = call_fn(client, model, chunk_data["text"], system_prompt)
