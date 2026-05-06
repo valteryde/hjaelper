@@ -195,6 +195,27 @@
                         </div>
 
                         <div class="field full-width">
+                            <label class="toggle-group-label">Analysis Passes</label>
+                            <div class="toggle-group">
+                                <label class="toggle-item" for="enable-thread">
+                                    <input type="checkbox" id="enable-thread">
+                                    <span class="toggle-switch"></span>
+                                    <span class="toggle-text">Common Thread</span>
+                                </label>
+                                <label class="toggle-item" for="enable-coherence">
+                                    <input type="checkbox" id="enable-coherence">
+                                    <span class="toggle-switch"></span>
+                                    <span class="toggle-text">Coherence Check</span>
+                                </label>
+                                <label class="toggle-item" for="enable-factcheck">
+                                    <input type="checkbox" id="enable-factcheck">
+                                    <span class="toggle-switch"></span>
+                                    <span class="toggle-text">Fact Check</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="field full-width">
                             <label for="api-key">Authentication Key</label>
                             <input type="password" id="api-key" placeholder="sk-...">
                             <small>Stored locally. Never persisted.</small>

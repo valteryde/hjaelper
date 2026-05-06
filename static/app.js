@@ -12,6 +12,11 @@
     const customPromptInput = document.getElementById("custom-prompt");
     const submitBtn = document.getElementById("submit-btn");
 
+    // Analysis pass toggles
+    const enableThreadInput = document.getElementById("enable-thread");
+    const enableCoherenceInput = document.getElementById("enable-coherence");
+    const enableFactcheckInput = document.getElementById("enable-factcheck");
+
     const uploadSection = document.getElementById("upload-section");
     const progressSection = document.getElementById("progress-section");
     const statusText = document.getElementById("status-text");
@@ -46,6 +51,16 @@
     const savedCustomPrompt = localStorage.getItem("hjaelper_custom_prompt");
     if (savedCustomPrompt) customPromptInput.value = savedCustomPrompt;
 
+    // Restore toggle states
+    const savedThread = localStorage.getItem("hjaelper_enable_thread");
+    if (savedThread === "true") enableThreadInput.checked = true;
+
+    const savedCoherence = localStorage.getItem("hjaelper_enable_coherence");
+    if (savedCoherence === "true") enableCoherenceInput.checked = true;
+
+    const savedFactcheck = localStorage.getItem("hjaelper_enable_factcheck");
+    if (savedFactcheck === "true") enableFactcheckInput.checked = true;
+
     // Upload handler
     submitBtn.addEventListener("click", async () => {
         const file = pdfInput.files[0];
@@ -56,6 +71,9 @@
         const language = languageInput.value.trim();
         const skillLevel = skillLevelInput.value.trim();
         const customPrompt = customPromptInput.value.trim();
+        const enableThread = enableThreadInput.checked;
+        const enableCoherence = enableCoherenceInput.checked;
+        const enableFactcheck = enableFactcheckInput.checked;
 
         if (!file) return showError("Please select a PDF file.");
         if (!apiKey) return showError("Please enter your API key.");
@@ -69,6 +87,9 @@
         localStorage.setItem("hjaelper_language", language);
         localStorage.setItem("hjaelper_skill_level", skillLevel);
         localStorage.setItem("hjaelper_custom_prompt", customPrompt);
+        localStorage.setItem("hjaelper_enable_thread", enableThread);
+        localStorage.setItem("hjaelper_enable_coherence", enableCoherence);
+        localStorage.setItem("hjaelper_enable_factcheck", enableFactcheck);
 
         // Build FormData
         const formData = new FormData();
@@ -80,6 +101,9 @@
         formData.append("language", language);
         formData.append("skill_level", skillLevel);
         formData.append("custom_prompt", customPrompt);
+        formData.append("enable_thread", enableThread);
+        formData.append("enable_coherence", enableCoherence);
+        formData.append("enable_factcheck", enableFactcheck);
 
         submitBtn.disabled = true;
         hideError();

@@ -20,6 +20,11 @@ def upload_pdf(request):
     skill_level = request.POST.get("skill_level", "").strip()
     custom_prompt = request.POST.get("custom_prompt", "").strip()
 
+    # Parse analysis pass toggles.
+    enable_thread = request.POST.get("enable_thread", "").lower() in ("true", "1", "on")
+    enable_coherence = request.POST.get("enable_coherence", "").lower() in ("true", "1", "on")
+    enable_factcheck = request.POST.get("enable_factcheck", "").lower() in ("true", "1", "on")
+
     # Parse chunk size (words per chunk). Default 2000, min 200, max 50000.
     try:
         chunk_size = int(request.POST.get("chunk_size", "2000"))
@@ -47,7 +52,11 @@ def upload_pdf(request):
 
     # Dispatch to Celery — the API key is passed as an argument,
     # never persisted to the database.
-    process_pdf.delay(str(job.id), api_key, model, provider, chunk_size, language, skill_level, custom_prompt)
+    process_pdf.delay(
+        str(job.id), api_key, model, provider, chunk_size,
+        language, skill_level, custom_prompt,
+        enable_thread, enable_coherence, enable_factcheck,
+    )
 
     return JsonResponse({"job_id": str(job.id)})
 
